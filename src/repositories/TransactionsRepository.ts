@@ -15,17 +15,8 @@ interface CreateTransaction {
 class TransactionsRepository {
   private transactions: Transaction[];
 
-  private income: number;
-
-  private outcome: number;
-
-  private total: number;
-
   constructor() {
     this.transactions = [];
-    this.income = 0;
-    this.outcome = 0;
-    this.total = 0;
   }
 
   public all(): Transaction[] {
@@ -33,23 +24,31 @@ class TransactionsRepository {
   }
 
   public getBalance(): Balance {
-    this.income = 0;
-    this.outcome = 0;
-    this.total = 0;
+    const { income, outcome } = this.transactions.reduce(
+      (accumulator: Balance, transaction: Transaction) => {
+        switch (transaction.type) {
+          case 'income':
+            accumulator.income += transaction.value;
+            break;
+          case 'outcome':
+            accumulator.outcome += transaction.value;
+            break;
+          default:
+            break;
+        }
 
-    this.transactions.map(transaction => {
-      this.income += transaction.type === 'income' ? transaction.value : 0;
-      this.outcome += transaction.type === 'outcome' ? transaction.value : 0;
-      return this;
-    });
+        return accumulator;
+      },
+      {
+        income: 0,
+        outcome: 0,
+        total: 0,
+      },
+    );
 
-    const balance: Balance = {
-      income: this.income,
-      outcome: this.outcome,
-      total: this.income - this.outcome,
-    };
+    const total = income - outcome;
 
-    return balance;
+    return { income, outcome, total };
   }
 
   public create({ title, value, type }: CreateTransaction): Transaction {
